@@ -15,7 +15,7 @@ func _ready() -> void:
 	VideoManager.bump()
 
 func _enter_tree() -> void:
-	if has_node(&"Sprite2D"): return
+	if has_node(^"Sprite2D"): return
 	
 	sprite2d.name = &"Sprite2D"
 	sprite2d.set_texture(crosshair_sprite)
