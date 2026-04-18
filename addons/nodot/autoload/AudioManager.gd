@@ -77,6 +77,28 @@ func add_music_bus(bus_name: String):
 	
 func add_sfx_bus(bus_name: String):
 	sfx_audiobus.append(bus_name)
+	
+func set_reverb(bus_name: String, config: Dictionary):
+	var bus_index = AudioServer.get_bus_index(bus_name)
+	if bus_index < 0: return
+
+	var effect_count = AudioServer.get_bus_effect_count(bus_index)
+	for i in range(effect_count):
+		var effect = AudioServer.get_bus_effect(bus_index, i)
+		if effect is AudioEffectReverb:
+			if config.has("room_size"):
+				effect.room_size = config["room_size"]
+			if config.has("damping"):
+				effect.damping = config["damping"]
+			if config.has("spread"):
+				effect.spread = config["spread"]
+			if config.has("hipass"):
+				effect.hipass = config["hipass"]
+			if config.has("dry"):
+				effect.dry = config["dry"]
+			if config.has("wet"):
+				effect.wet = config["wet"]
+			return
 
 func save_config():
 	SaveManager.config.set_item("master_volume", master_volume)

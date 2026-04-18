@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://71otckrklqbk"]
+[gd_scene format=3 uid="uid://71otckrklqbk"]
 
 [sub_resource type="GDScript" id="GDScript_ns61t"]
 script/source = "extends Node3D
@@ -43,9 +43,9 @@ sections = 2
 section_length = 0.5
 section_segments = 1
 
-[node name="Tracer" type="Node3D"]
+[node name="Tracer" type="Node3D" unique_id=2127187653]
 script = SubResource("GDScript_ns61t")
 
-[node name="Tracer" type="MeshInstance3D" parent="."]
+[node name="Tracer" type="MeshInstance3D" parent="." unique_id=1418967801]
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0.5)
 mesh = SubResource("RibbonTrailMesh_fv62p")

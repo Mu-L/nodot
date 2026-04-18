@@ -14,6 +14,8 @@ signal interaction_label_updated(message: String)
 @export var interact_action: String = "interact"
 ## Enable the pick up functionality
 @export var enable_pickup: bool = true
+## The time in seconds to hold the interact button to trigger a hold interaction
+@export var interact_hold_time: float = 1.0
 ## The maximum mass (weight) that can be carried
 @export var max_mass: float = 10.0
 ## The distance away from the raycast origin to carry the object
@@ -33,6 +35,7 @@ signal interaction_label_updated(message: String)
 ## Carry collision mask
 @export_flags_3d_physics var carry_collision_mask: int = 1
 
+@onready var character: CharacterBody3D = get_parent()
 
 # RigidBody3D or null being carried
 var carried_body: RigidBody3D
@@ -45,30 +48,53 @@ var carried_body_prev_layer: int = 1
 var carried_body_physics_material: PhysicsMaterial
 var is_action_pressed: bool = false
 var current_label_text: String = ""
+var hold_timer: float = 0.0
+var is_holding_interact: bool = false
+
 
 func _input(event: InputEvent):
-	if !enabled or !event.is_action_pressed(interact_action) or !is_multiplayer_authority(): return
-	
-	var collider = get_collider()
-	if collider and collider.has_meta("NonPickable") and collider.get_meta("NonPickable"): return
-	if !is_instance_valid(collider):
-		if is_instance_valid(carried_body):
-			carry_end()
-		return
+	if !enabled or !is_multiplayer_authority(): return
 
-	interacted.emit(collider, get_collision_point(), get_collision_normal())
-	if collider.has_method("interact"):
-		collider.interact()
-		GlobalSignal.emit("interacted", collider, get_collision_point(), get_collision_normal())
-	else:
-		if is_instance_valid(carried_body):
-			carry_end()
-		else:
-			carry_begin(collider)
+	if !character.input_enabled: return
+
+	if event.is_action_pressed(interact_action):
+		is_holding_interact = true
+		hold_timer = 0.0
+	
+	if event.is_action_released(interact_action):
+		is_holding_interact = false
+		var collider = get_collider()
+		if !is_instance_valid(collider):
+			if is_instance_valid(carried_body):
+				carry_end()
+			return
+		
+		if collider and collider.has_meta("NonPickable") and collider.get_meta("NonPickable"): return
+
+		if hold_timer < interact_hold_time:
+			interacted.emit(collider, get_collision_point(), get_collision_normal())
+			if collider.has_method("interact"):
+				collider.interact()
+				GlobalSignal.emit("interacted", collider, get_collision_point(), get_collision_normal())
+			else:
+				if is_instance_valid(carried_body):
+					carry_end()
+				else:
+					carry_begin(collider)
+		hold_timer = 0.0
 
 
 func _physics_process(delta):
 	if !is_multiplayer_authority(): return
+
+	if is_holding_interact:
+		hold_timer += delta
+		var collider = get_collider()
+		if is_instance_valid(collider) and collider.has_method("interact_held"):
+			if hold_timer >= interact_hold_time:
+				collider.interact_held()
+				is_holding_interact = false
+				hold_timer = 0.0
 	
 	if is_instance_valid(carried_body):
 		was_carrying_body = true

@@ -1,7 +1,6 @@
-[gd_scene load_steps=28 format=3 uid="uid://dj1v33w5ffysa"]
+[gd_scene format=3 uid="uid://dj1v33w5ffysa"]
 
 [ext_resource type="Script" uid="uid://bcbxhmjoythj1" path="res://addons/nodot/menus/MenuContainer.gd" id="1_0h6t2"]
-[ext_resource type="Script" uid="uid://dx8ygrcaflqan" path="res://addons/nodot/utility/WindowSizeConnector.gd" id="2_ffg2c"]
 [ext_resource type="Script" uid="uid://c5fu75lbvn2ug" path="res://addons/nodot/signaling/SignalConnector.gd" id="3_nn3pg"]
 
 [sub_resource type="GDScript" id="GDScript_p2nii"]
@@ -436,49 +435,46 @@ skew = Vector2(-0.2, 0)
 bg_color = Color(0.0784314, 0.0784314, 0.0784314, 0.431373)
 skew = Vector2(-0.2, 0)
 
-[node name="OptionsMenuContainer" type="Node2D" node_paths=PackedStringArray("selectable_items")]
+[node name="OptionsMenuContainer" type="Node2D" unique_id=96870771 node_paths=PackedStringArray("selectable_items")]
 process_mode = 3
 script = ExtResource("1_0h6t2")
 selectable_items = [NodePath("Control/CloseButton")]
 
-[node name="OptionsMenuControl" type="Node" parent="."]
+[node name="OptionsMenuControl" type="Node" parent="." unique_id=1994375680]
 unique_name_in_owner = true
 script = SubResource("GDScript_p2nii")
 
-[node name="BGM" type="Node" parent="OptionsMenuControl"]
+[node name="BGM" type="Node" parent="OptionsMenuControl" unique_id=199074089]
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="OptionsMenuControl/BGM"]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="OptionsMenuControl/BGM" unique_id=1904826425]
 
-[node name="MusicStartSignalConnector" type="Node" parent="OptionsMenuControl/BGM" node_paths=PackedStringArray("trigger_node", "target_node")]
+[node name="MusicStartSignalConnector" type="Node" parent="OptionsMenuControl/BGM" unique_id=1633852464 node_paths=PackedStringArray("trigger_node", "target_node")]
 script = ExtResource("3_nn3pg")
 trigger_node = NodePath("../../..")
 target_node = NodePath("../AudioStreamPlayer")
 trigger_signal = "showing"
 target_method = "play"
 
-[node name="MusicStopSignalConnector" type="Node" parent="OptionsMenuControl/BGM" node_paths=PackedStringArray("trigger_node", "target_node")]
+[node name="MusicStopSignalConnector" type="Node" parent="OptionsMenuControl/BGM" unique_id=1281697298 node_paths=PackedStringArray("trigger_node", "target_node")]
 script = ExtResource("3_nn3pg")
 trigger_node = NodePath("../../..")
 target_node = NodePath("../AudioStreamPlayer")
 trigger_signal = "hiding"
 target_method = "stop"
 
-[node name="SFX" type="Node" parent="OptionsMenuControl"]
+[node name="SFX" type="Node" parent="OptionsMenuControl" unique_id=941902114]
 
-[node name="HoverTick" type="AudioStreamPlayer" parent="OptionsMenuControl/SFX"]
+[node name="HoverTick" type="AudioStreamPlayer" parent="OptionsMenuControl/SFX" unique_id=2020225457]
 
-[node name="ClickTick" type="AudioStreamPlayer" parent="OptionsMenuControl/SFX"]
+[node name="ClickTick" type="AudioStreamPlayer" parent="OptionsMenuControl/SFX" unique_id=700509503]
 
-[node name="WindowSizeConnector" type="Node" parent="." node_paths=PackedStringArray("target_nodes")]
-script = ExtResource("2_ffg2c")
-target_nodes = [NodePath("../Control")]
-
-[node name="Control" type="Control" parent="."]
+[node name="Control" type="Control" parent="." unique_id=434243622]
 layout_mode = 3
+anchors_preset = 0
 offset_right = 1152.0
 offset_bottom = 648.0
 
-[node name="Background" type="TextureRect" parent="Control" node_paths=PackedStringArray("menu_container")]
+[node name="Background" type="TextureRect" parent="Control" unique_id=747704686 node_paths=PackedStringArray("menu_container")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -488,7 +484,7 @@ grow_vertical = 2
 script = SubResource("GDScript_55485")
 menu_container = NodePath("../..")
 
-[node name="BackDrop" type="ColorRect" parent="Control"]
+[node name="BackDrop" type="ColorRect" parent="Control" unique_id=736751061]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -498,7 +494,7 @@ grow_vertical = 2
 mouse_filter = 1
 color = Color(0, 0, 0, 0.490196)
 
-[node name="MarginContainer" type="MarginContainer" parent="Control"]
+[node name="MarginContainer" type="MarginContainer" parent="Control" unique_id=1051006162]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -510,25 +506,25 @@ theme_override_constants/margin_top = 130
 theme_override_constants/margin_right = 100
 theme_override_constants/margin_bottom = 100
 
-[node name="VideoOptions" type="BoxContainer" parent="Control/MarginContainer"]
+[node name="VideoOptions" type="BoxContainer" parent="Control/MarginContainer" unique_id=757507301]
 layout_mode = 2
 alignment = 1
 vertical = true
 
-[node name="GridContainer" type="GridContainer" parent="Control/MarginContainer/VideoOptions"]
+[node name="GridContainer" type="GridContainer" parent="Control/MarginContainer/VideoOptions" unique_id=227176346]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/h_separation = 230
 theme_override_constants/v_separation = 30
 columns = 2
 
-[node name="Label" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="Label" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=700430581]
 layout_mode = 2
 size_flags_vertical = 3
 text = "Display Mode"
 vertical_alignment = 1
 
-[node name="DisplayModeMenuButton" type="MenuButton" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="DisplayModeMenuButton" type="MenuButton" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=1374829498]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Exclusive Fullscreen"
@@ -542,20 +538,20 @@ popup/item_2/checked = true
 popup/item_2/id = 4
 script = SubResource("GDScript_l8cix")
 
-[node name="Label2" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="Label2" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=1382760982]
 layout_mode = 2
 text = "Monitor"
 
-[node name="ScreenMenuButton" type="MenuButton" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="ScreenMenuButton" type="MenuButton" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=2005011362]
 layout_mode = 2
 size_flags_horizontal = 0
 script = SubResource("GDScript_61kd7")
 
-[node name="Label3" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="Label3" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=692814624]
 layout_mode = 2
 text = "FPS Limit"
 
-[node name="FPSLimitMenuButton" type="MenuButton" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="FPSLimitMenuButton" type="MenuButton" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=1567872112]
 layout_mode = 2
 item_count = 7
 popup/item_0/text = "No Limit"
@@ -574,20 +570,20 @@ popup/item_6/text = "360"
 popup/item_6/id = 6
 script = SubResource("GDScript_h7hm4")
 
-[node name="Label4" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="Label4" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=1094892640]
 layout_mode = 2
 text = "Vertical Sync"
 
-[node name="VSyncCheckButton" type="CheckButton" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="VSyncCheckButton" type="CheckButton" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=847784442]
 layout_mode = 2
 size_flags_horizontal = 0
 script = SubResource("GDScript_f8lsk")
 
-[node name="Label5" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="Label5" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=82863104]
 layout_mode = 2
 text = "Anti-Aliasing (MSAA)"
 
-[node name="MSAAMenuButton" type="MenuButton" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="MSAAMenuButton" type="MenuButton" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=2034193108]
 layout_mode = 2
 size_flags_horizontal = 0
 item_count = 4
@@ -601,93 +597,93 @@ popup/item_3/text = "8x"
 popup/item_3/id = 3
 script = SubResource("GDScript_knrud")
 
-[node name="Label6" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="Label6" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=67043995]
 layout_mode = 2
 text = "Brightness"
 
-[node name="BrightnessHSlider" type="HSlider" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="BrightnessHSlider" type="HSlider" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=267696484]
 layout_mode = 2
 max_value = 8.0
 step = 0.1
 value = 2.0
 script = SubResource("GDScript_j2ipi")
 
-[node name="Label7" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="Label7" type="Label" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=104730743]
 layout_mode = 2
 text = "Contrast"
 
-[node name="ContrastHSlider2" type="HSlider" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="ContrastHSlider2" type="HSlider" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=853861731]
 layout_mode = 2
 max_value = 8.0
 step = 0.1
 value = 2.0
 script = SubResource("GDScript_atlo5")
 
-[node name="Spacer" type="Control" parent="Control/MarginContainer/VideoOptions/GridContainer"]
+[node name="Spacer" type="Control" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=636446298]
 layout_mode = 2
 
-[node name="DefaultsButton" type="Button" parent="Control/MarginContainer/VideoOptions/GridContainer" node_paths=PackedStringArray("input_components")]
+[node name="DefaultsButton" type="Button" parent="Control/MarginContainer/VideoOptions/GridContainer" unique_id=722705409 node_paths=PackedStringArray("input_components")]
 layout_mode = 2
 text = "Reset to Defaults"
 script = SubResource("GDScript_tx7i5")
 input_components = [NodePath("../DisplayModeMenuButton"), NodePath("../ScreenMenuButton"), NodePath("../FPSLimitMenuButton"), NodePath("../VSyncCheckButton"), NodePath("../MSAAMenuButton"), NodePath("../BrightnessHSlider"), NodePath("../ContrastHSlider2")]
 
-[node name="AudioOptions" type="BoxContainer" parent="Control/MarginContainer"]
+[node name="AudioOptions" type="BoxContainer" parent="Control/MarginContainer" unique_id=579550836]
 visible = false
 layout_mode = 2
 alignment = 1
 vertical = true
 
-[node name="GridContainer" type="GridContainer" parent="Control/MarginContainer/AudioOptions"]
+[node name="GridContainer" type="GridContainer" parent="Control/MarginContainer/AudioOptions" unique_id=512300024]
 layout_mode = 2
 theme_override_constants/h_separation = 230
 theme_override_constants/v_separation = 30
 columns = 2
 
-[node name="SliderLabel" type="Label" parent="Control/MarginContainer/AudioOptions/GridContainer"]
+[node name="SliderLabel" type="Label" parent="Control/MarginContainer/AudioOptions/GridContainer" unique_id=1740826799]
 layout_mode = 2
 text = "Master Volume"
 
-[node name="HSlider" type="HSlider" parent="Control/MarginContainer/AudioOptions/GridContainer"]
+[node name="HSlider" type="HSlider" parent="Control/MarginContainer/AudioOptions/GridContainer" unique_id=107782557]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
 value = 90.0
 script = SubResource("GDScript_2332y")
 
-[node name="SliderLabel2" type="Label" parent="Control/MarginContainer/AudioOptions/GridContainer"]
+[node name="SliderLabel2" type="Label" parent="Control/MarginContainer/AudioOptions/GridContainer" unique_id=167226119]
 layout_mode = 2
 text = "Music Volume"
 
-[node name="HSlider2" type="HSlider" parent="Control/MarginContainer/AudioOptions/GridContainer"]
+[node name="HSlider2" type="HSlider" parent="Control/MarginContainer/AudioOptions/GridContainer" unique_id=453935799]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
 value = 90.0
 script = SubResource("GDScript_ninhr")
 
-[node name="SliderLabel3" type="Label" parent="Control/MarginContainer/AudioOptions/GridContainer"]
+[node name="SliderLabel3" type="Label" parent="Control/MarginContainer/AudioOptions/GridContainer" unique_id=293106455]
 layout_mode = 2
 text = "SFX Volume"
 
-[node name="HSlider3" type="HSlider" parent="Control/MarginContainer/AudioOptions/GridContainer"]
+[node name="HSlider3" type="HSlider" parent="Control/MarginContainer/AudioOptions/GridContainer" unique_id=1852812627]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
 value = 90.0
 script = SubResource("GDScript_bjj28")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control/MarginContainer/AudioOptions/GridContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/MarginContainer/AudioOptions/GridContainer" unique_id=185493856]
 layout_mode = 2
 alignment = 1
 
-[node name="RevertButton" type="Button" parent="Control/MarginContainer/AudioOptions/GridContainer/HBoxContainer" node_paths=PackedStringArray("nodes")]
+[node name="RevertButton" type="Button" parent="Control/MarginContainer/AudioOptions/GridContainer/HBoxContainer" unique_id=751024324 node_paths=PackedStringArray("nodes")]
 layout_mode = 2
 text = "Restore Defaults"
 script = SubResource("GDScript_tnn2v")
 nodes = [NodePath("../../HSlider"), NodePath("../../HSlider2"), NodePath("../../HSlider3")]
 
-[node name="InputOptions" type="BoxContainer" parent="Control/MarginContainer"]
+[node name="InputOptions" type="BoxContainer" parent="Control/MarginContainer" unique_id=1511203739]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
@@ -696,16 +692,16 @@ theme_override_constants/separation = 15
 alignment = 1
 vertical = true
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control/MarginContainer/InputOptions"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/MarginContainer/InputOptions" unique_id=78197354]
 layout_mode = 2
 theme_override_constants/separation = 22
 alignment = 1
 
-[node name="Label" type="Label" parent="Control/MarginContainer/InputOptions/HBoxContainer"]
+[node name="Label" type="Label" parent="Control/MarginContainer/InputOptions/HBoxContainer" unique_id=1950047886]
 layout_mode = 2
 text = "Mouse Sensitivity"
 
-[node name="MouseHSlider" type="HSlider" parent="Control/MarginContainer/InputOptions/HBoxContainer"]
+[node name="MouseHSlider" type="HSlider" parent="Control/MarginContainer/InputOptions/HBoxContainer" unique_id=482778863]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -714,39 +710,39 @@ step = 0.025
 value = 0.1
 script = SubResource("GDScript_iaxat")
 
-[node name="ResetSettingsButton" type="Button" parent="Control/MarginContainer/InputOptions/HBoxContainer"]
+[node name="ResetSettingsButton" type="Button" parent="Control/MarginContainer/InputOptions/HBoxContainer" unique_id=585882237]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Reset to default"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Control/MarginContainer/InputOptions"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Control/MarginContainer/InputOptions" unique_id=1188215239]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="GridContainer" type="GridContainer" parent="Control/MarginContainer/InputOptions/ScrollContainer"]
+[node name="GridContainer" type="GridContainer" parent="Control/MarginContainer/InputOptions/ScrollContainer" unique_id=498482569]
 layout_mode = 2
 theme_override_constants/h_separation = 30
 columns = 3
 script = SubResource("GDScript_ljq8r")
 ignored_actions = Array[String](["escape", "sprint"])
 
-[node name="Label" type="Label" parent="Control/MarginContainer/InputOptions/ScrollContainer/GridContainer"]
+[node name="Label" type="Label" parent="Control/MarginContainer/InputOptions/ScrollContainer/GridContainer" unique_id=902854058]
 layout_mode = 2
 text = "Action"
 
-[node name="Label2" type="Label" parent="Control/MarginContainer/InputOptions/ScrollContainer/GridContainer"]
+[node name="Label2" type="Label" parent="Control/MarginContainer/InputOptions/ScrollContainer/GridContainer" unique_id=284504718]
 layout_mode = 2
 text = "Keyboard"
 
-[node name="Label3" type="Label" parent="Control/MarginContainer/InputOptions/ScrollContainer/GridContainer"]
+[node name="Label3" type="Label" parent="Control/MarginContainer/InputOptions/ScrollContainer/GridContainer" unique_id=884276898]
 layout_mode = 2
 text = "Controller"
 
-[node name="GameOptions" type="BoxContainer" parent="Control/MarginContainer"]
+[node name="GameOptions" type="BoxContainer" parent="Control/MarginContainer" unique_id=304486431]
 visible = false
 layout_mode = 2
 
-[node name="CloseButton" type="Button" parent="Control"]
+[node name="CloseButton" type="Button" parent="Control" unique_id=532629834]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 1.0
@@ -765,7 +761,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_f47jc")
 text = "Back"
 script = SubResource("GDScript_yprk4")
 
-[node name="TabsContainer" type="HBoxContainer" parent="Control" node_paths=PackedStringArray("menus")]
+[node name="TabsContainer" type="HBoxContainer" parent="Control" unique_id=1102489401 node_paths=PackedStringArray("menus")]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -776,7 +772,7 @@ alignment = 1
 script = SubResource("GDScript_vqvxb")
 menus = [NodePath("../MarginContainer/VideoOptions"), NodePath("../MarginContainer/AudioOptions"), NodePath("../MarginContainer/InputOptions"), NodePath("../MarginContainer/GameOptions")]
 
-[node name="Video" type="Button" parent="Control/TabsContainer"]
+[node name="Video" type="Button" parent="Control/TabsContainer" unique_id=296454633]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -788,7 +784,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_sp650")
 theme_override_styles/focus = SubResource("StyleBoxFlat_bw13l")
 text = "Video"
 
-[node name="Audio" type="Button" parent="Control/TabsContainer"]
+[node name="Audio" type="Button" parent="Control/TabsContainer" unique_id=981991748]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -801,7 +797,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_bw13l")
 text = "Audio
 "
 
-[node name="Controls" type="Button" parent="Control/TabsContainer"]
+[node name="Controls" type="Button" parent="Control/TabsContainer" unique_id=1381675188]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -813,7 +809,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_sp650")
 theme_override_styles/focus = SubResource("StyleBoxFlat_bw13l")
 text = "Controls"
 
-[node name="Game" type="Button" parent="Control/TabsContainer"]
+[node name="Game" type="Button" parent="Control/TabsContainer" unique_id=1786357738]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -825,7 +821,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_sp650")
 theme_override_styles/focus = SubResource("StyleBoxFlat_bw13l")
 text = "Game"
 
-[node name="InputEntryPanel" type="Panel" parent="Control"]
+[node name="InputEntryPanel" type="Panel" parent="Control" unique_id=105370579]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -835,7 +831,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="Control/InputEntryPanel"]
+[node name="Label" type="Label" parent="Control/InputEntryPanel" unique_id=833988045]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.5

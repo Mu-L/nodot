@@ -8,35 +8,47 @@ class_name NodePool extends Node
 ## The node template to duplicate for the pool
 @export var target_node: Node: set = _set_target_node
 
-## The duplicate flags to use when creating new nodes (see Node.DUPLICATE_* constants)
-@export var duplicate_flag: int = 15
-
 ## The parent node where new nodes should be spawned
 @export var spawn_root: Node
 
 # Internal array storing the pool of nodes
 var pool: Array[Node] = []
+var cached_node: Node
 
 ## Sets the target node and initializes the pool
 func _set_target_node(new_node: Node) -> void:
 	target_node = new_node
 	clear()
-	_add_node_to_tree(target_node)
-	pool = [target_node]
+	target_node.get_parent().remove_child(target_node)
+	cached_node = target_node.duplicate()
+	if cached_node.get_parent() != null:
+		cached_node.reparent(self)
+	var first_instance := cached_node.duplicate()
+	_add_node_to_tree(first_instance)
+	pool = [first_instance]
 	
 ## Adds a node to the scene tree if it's not already in one
 func _add_node_to_tree(node: Node) -> void:
-	if !node.is_inside_tree():
-		if is_instance_valid(spawn_root):
-			spawn_root.add_child.call_deferred(node)
+	if is_instance_valid(spawn_root):
+		if node.is_inside_tree():
+			node.reparent(spawn_root)
 		else:
+			if node.get_parent():
+				node.reparent(spawn_root)
+			spawn_root.add_child.call_deferred(node)
+	else:
+		if node.is_inside_tree():
+			node.reparent(self)
+		else:
+			if node.get_parent():
+				node.reparent(spawn_root)
 			add_child(node)
 			
 ## Gets the next available node from the pool
 ## If the pool is at its limit, reuses the oldest node
 ## Otherwise, creates a new node by duplicating the target
 func next() -> Node:
-	var node = pool.pop_front() if pool.size() >= pool_limit else pool[0].duplicate(duplicate_flag)
+	var node = pool.pop_front() if pool.size() >= pool_limit else cached_node.duplicate()
 	if !is_instance_valid(node): return null
 	pool.append(node)
 	_add_node_to_tree(node)

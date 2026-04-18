@@ -32,6 +32,15 @@ func _enter_tree() -> void:
 		trigger_node.connect(trigger_signal, action.unbind(unbind_count))
 	elif !trigger_node.is_connected(trigger_signal, action):
 		trigger_node.connect(trigger_signal, action)
+		
+func _ready() -> void:
+	if Engine.is_editor_hint(): return
+	
+	if autoplay:
+		if fade_speed > 0.0:
+			fade_in()
+		else:
+			action()
 
 func _tweak_pitch():
 	pitch_scale = rng.randf_range(1.0 - tweak_pitch, 1.0 + tweak_pitch)

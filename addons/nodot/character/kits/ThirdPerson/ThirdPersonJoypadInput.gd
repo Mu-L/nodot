@@ -120,9 +120,9 @@ func _physics_process(delta: float) -> void:
 		var input_direction_y = Input.get_joy_axis(0, JOY_AXIS_LEFT_Y)
 		var direction = Vector2(input_direction_x, input_direction_y)
 		
-		if direction.length() < deadzone_move:
-			character.direction2d = Vector2.ZERO
-		else:
+		# Only set direction when joystick has significant input
+		# This allows keyboard input to work when joystick is idle
+		if direction.length() >= deadzone_move:
 			character.direction2d = direction
 			camera.time_since_last_move = 0.0
 			

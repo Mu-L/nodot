@@ -1,5 +1,7 @@
 class_name NodotRigidBody3D extends RigidBody3D
 
+@export var buoyancy: float = 1.0
+
 signal character_enter(body: CharacterBody3D)
 
 func focussed() -> void:

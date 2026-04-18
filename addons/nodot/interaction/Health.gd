@@ -7,8 +7,6 @@ class_name Health extends Node
 @export var max_health: float = 100.0
 ## The current health
 @export var current_health: float = max_health
-## Only use hitboxes if one is present
-@export var hitbox_only: bool = true
 
 ## current_health has reached zero
 signal health_depleted
@@ -41,7 +39,6 @@ func add_health(modifier: float) -> void:
 		else:
 			health_gained.emit(old_health, new_health)
 	health_changed.emit(old_health, new_health)
-
 
 ## Sets the current_health to a specific value
 func set_health(new_value: float) -> void:

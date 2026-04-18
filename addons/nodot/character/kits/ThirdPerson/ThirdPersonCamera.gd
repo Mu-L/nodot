@@ -12,8 +12,15 @@ class_name ThirdPersonCamera extends Camera3D
 ## The speed at which the camera moves into position when the character is moving
 @export var chase_speed: float = 2.0
 ## Collision excluded objects
-@export var collision_ignored: Array[PhysicsBody3D] = []
+@export var collision_ignored: Array[PhysicsBody3D] = [] # WARNING: Modifying the type here causes an infinite recursion crash.
+## Angle threshold (in radians) at which camera starts sliding closer
+@export var slide_angle_threshold: float = -0.7
+## Minimum distance when looking straight down
+@export var min_slide_distance: float = 2.0
+## Speed at which distance adjusts
+@export var distance_adjust_speed: float = 8.0
 
+var current_distance: float = 5.0
 var container: Node3D
 var springarm: SpringArm3D
 var target_node: Node3D
@@ -26,6 +33,8 @@ func _get_configuration_warnings() -> PackedStringArray:
 	return warnings
 
 func _enter_tree() -> void:
+	if Engine.is_editor_hint(): return
+	
 	springarm = SpringArm3D.new()
 	for node in collision_ignored:
 		springarm.add_excluded_object(node.get_rid())
@@ -34,19 +43,33 @@ func _enter_tree() -> void:
 	target_node = Node3D.new()
 	springarm.add_child(target_node)
 	get_parent().add_child.call_deferred(springarm)
+	top_level = true
 	
 func _ready():
 	container = get_parent()
+	current_distance = distance
 
 func _process(delta: float) -> void:
-	if !current: return
-		
-	if target_node:
-		global_position = lerp(global_position, target_node.global_position, chase_speed * delta)
-		quaternion = quaternion.slerp(target_node.quaternion, chase_speed * delta)
+	global_position = lerp(global_position, target_node.global_position, chase_speed * 5 * delta)
+	quaternion = quaternion.slerp(target_node.global_transform.basis.get_rotation_quaternion(), chase_speed * 5 * delta)
+	springarm.spring_length = lerp(springarm.spring_length, current_distance, chase_speed * delta)
 	
-	if springarm:
-		springarm.spring_length = lerp(springarm.spring_length, distance, chase_speed * delta)
+	if !current: return
+	
+	# Adjust distance based on camera pitch (looking down)
+	if container:
+		var pitch: float = container.rotation.x
+		var target_distance: float = distance
+
+		# When looking down past the threshold, reduce distance
+		if pitch < slide_angle_threshold:
+			# Calculate how far past the threshold we are (0.0 to 1.0)
+			var slide_factor: float = clamp((slide_angle_threshold - pitch) / abs(slide_angle_threshold), 0.0, 1.0)
+			# Interpolate between base distance and minimum slide distance
+			target_distance = lerp(distance, min_slide_distance, slide_factor)
+
+		# Smoothly adjust to target distance
+		current_distance = lerp(current_distance, target_distance, distance_adjust_speed * delta)
 	
 	if time_to_reset > 0.0:
 		if container.rotation != Vector3.ZERO:

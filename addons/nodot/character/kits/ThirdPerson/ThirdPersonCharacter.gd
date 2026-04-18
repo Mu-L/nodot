@@ -11,6 +11,8 @@ class_name ThirdPersonCharacter extends NodotCharacter3D
 @export var minimum_fall_damage: float = 5.0
 ## The amount of fall damage to inflict when hitting the ground at velocity (0 for disabled)
 @export var fall_damage_multiplier: float = 0.5
+## Can control the character while its in the air
+@export var air_control: bool = true
 ## Strafing enabled. Otherwise the character will turn to face the movement direction
 @export var strafing: bool = false
 ## Turn rate. If strafing is disabled, define how fast the character will turn.
@@ -26,6 +28,7 @@ class_name ThirdPersonCharacter extends NodotCharacter3D
 ## Triggered when the character takes fall damage
 signal fall_damage(amount: float)
 
+var air_time: float = 0.0
 var submerge_handler: CharacterSwim3D
 var override_movement: bool = false
 var health: Health
@@ -42,6 +45,7 @@ var look_angle := Vector2.ZERO
 var input_states: Dictionary = {}
 var direction3d: Vector3 = Vector3.ZERO
 var third_person_camera_container: Node3D
+var speed_modifiers: Dictionary[String, float] = {}
 
 func _enter_tree() -> void:
 	super._enter_tree()
@@ -50,7 +54,7 @@ func _enter_tree() -> void:
 	for child in get_children():
 		if child is ThirdPersonCamera:
 			var node3d = Node3D.new()
-			node3d.name = &"ThirdPersonCameraContainer"
+			node3d.name = "ThirdPersonCameraContainer"
 			add_child(node3d)
 			remove_child(child)
 			node3d.add_child(child)
@@ -150,22 +154,28 @@ func set_rigid_interaction():
 				c.get_collider().linear_velocity.x *= -0.1
 			elif sign(char_basis.z) == sign(lin_vel.z):
 				c.get_collider().linear_velocity.z *= -0.1
-			
+				
 			c.get_collider().apply_central_impulse(-c.get_normal() * 0.25 * c.get_collider().mass)
 
 func move_air(delta: float) -> void:
+	air_time += delta
 	velocity.y = min(terminal_velocity, velocity.y - gravity * delta)
 	
-	var final_speed: float = movement_speed * delta * 100
+	var final_speed: float = get_current_speed() * delta * 100
 	
 	if direction3d == Vector3.ZERO:
 		velocity.x = lerp(velocity.x, direction3d.x * final_speed, 0.025)
 		velocity.z = lerp(velocity.z, direction3d.z * final_speed, 0.025)
+	elif air_control:
+		velocity.x = lerp(velocity.x, direction3d.x * final_speed, friction / 10)
+		velocity.z = lerp(velocity.z, direction3d.z * final_speed, friction / 10)
+		move_camera(turn_rate / 10)
 	
 	move_and_slide()
 
 func move_ground(delta: float) -> void:
-	var final_speed: float = movement_speed * delta * 100
+	air_time = 0.0
+	var final_speed: float = get_current_speed() * delta * 100
 	
 	if direction3d == Vector3.ZERO:
 		var final_friction = friction if friction >= 0 else final_speed
@@ -175,22 +185,25 @@ func move_ground(delta: float) -> void:
 		velocity.x = direction3d.x * final_speed
 		velocity.z = direction3d.z * final_speed
 		
-		if current_camera and !strafing:
-			var cached_rotation := Vector3.ZERO
-			if current_camera is ThirdPersonCamera:
-				cached_rotation = third_person_camera_container.global_rotation
-			else:
-				cached_rotation = current_camera.global_rotation
-				
-			face_target(position + direction3d, turn_rate)
-			
-			if current_camera is ThirdPersonCamera:
-				third_person_camera_container.global_rotation = cached_rotation
-			else:
-				current_camera.global_rotation = cached_rotation
+		move_camera()
 			
 	stair_step(delta)
-	
+
+func move_camera(final_turn_rate: float = turn_rate):
+	if current_camera and !strafing:
+		var cached_basis: Basis
+		if current_camera is ThirdPersonCamera:
+			cached_basis = third_person_camera_container.global_transform.basis
+		else:
+			cached_basis = current_camera.global_transform.basis
+
+		face_target(position + direction3d, final_turn_rate)
+
+		if current_camera is ThirdPersonCamera:
+			third_person_camera_container.global_transform.basis = cached_basis
+		else:
+			current_camera.global_transform.basis = cached_basis
+
 func stair_step(delta: float):
 	if is_on_wall():
 		move_and_slide()
@@ -233,6 +246,18 @@ func stair_step(delta: float):
 	# --- Step up logic ---
 	
 	velocity.y = lerp(velocity.y, 0.0, delta * 2.0)
+
+func get_current_speed() -> float:
+	var speed := movement_speed
+	for m in speed_modifiers.values():
+		speed *= m
+	return speed
+
+func set_speed_modifier(source: String, multiplier: float) -> void:
+	speed_modifiers[source] = multiplier
+
+func remove_speed_modifier(source: String) -> void:
+	speed_modifiers.erase(source)
 
 ## Disable player input
 func disable_input() -> void:

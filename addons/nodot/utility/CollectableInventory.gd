@@ -4,7 +4,10 @@ class_name CollectableInventory extends Node
 ## Enable the inventory
 @export var enabled: bool = true
 ## The maximum number of slots/stacks in the inventory (0 for infinite)
-@export var capacity: int = 25
+@export var capacity: int = 25:
+	set(value):
+		capacity = value
+		_update_capacity()
 ## The maximum weight of the inventory (0 for infinite)
 @export var max_weight: float = 20.0
 ## A node3d used to position items back into the world
@@ -30,6 +33,8 @@ signal overflow(collectable_id: String, quantity: int)
 signal max_weight_reached
 ## Triggered when the capacity is reached
 signal capacity_reached
+## Triggered when the capacity changes
+signal capacity_changed(new_capacity: int)
 
 ## Unique identifier for this inventory
 var unique_name: String = ""
@@ -122,6 +127,54 @@ func _enter_tree():
 		_collectable_stacks.append([EMPTY_SLOT_ID, EMPTY_SLOT_QUANTITY])
 	unique_name = "%s-%s" % [get_parent().name, name]
 	CollectableManager.inventories.set(unique_name, self)
+
+func _ready():
+	# After all initialization (including potential save loads), ensure stacks match capacity
+	call_deferred("_validate_capacity")
+
+## Validate that _collectable_stacks size matches capacity (after save load)
+func _validate_capacity() -> void:
+	if _collectable_stacks.size() != capacity:
+		_update_capacity()
+
+## Update capacity when it changes dynamically
+func _update_capacity() -> void:
+	if not is_inside_tree():
+		return
+
+	var current_size := _collectable_stacks.size()
+	var target_size := capacity
+
+	# Only update if capacity actually changed
+	if current_size == target_size:
+		return
+
+	var capacity_did_change := false
+	var new_slots := []
+
+	# Add empty slots if capacity increased
+	if target_size > current_size:
+		for i in range(current_size, target_size):
+			_collectable_stacks.append([EMPTY_SLOT_ID, EMPTY_SLOT_QUANTITY])
+			new_slots.append(i)
+		capacity_did_change = true
+	# Remove slots from the end if capacity decreased
+	elif target_size < current_size:
+		for i in range(current_size - 1, target_size - 1, -1):
+			var stack = _collectable_stacks[i]
+			# If removing a non-empty slot, emit overflow
+			if stack[0] != EMPTY_SLOT_ID and stack[1] > 0:
+				overflow.emit(stack[0], stack[1])
+			_collectable_stacks.remove_at(i)
+		capacity_did_change = true
+
+	# Emit capacity changed signal FIRST so UI can rebuild
+	if capacity_did_change:
+		capacity_changed.emit(capacity)
+
+	# Then emit updates for new slots AFTER UI is ready
+	for slot_index in new_slots:
+		collectable_updated.emit(slot_index, EMPTY_SLOT_ID, EMPTY_SLOT_QUANTITY)
 
 ## Internal validation for collectable actions
 func _validate_collectable_action(collectable_id: String, quantity: int, slot_index: int = -1) -> Dictionary:
@@ -340,12 +393,12 @@ func _remove_from_a_stack(collectable_id: String, quantity: int) -> bool:
 	return remaining <= 0
 
 ## Add a collectable to the inventory (public API)
-func add(collectable_id: String, quantity: int) -> bool:
+func add(collectable_id: String, quantity: int = 1) -> bool:
 	var result = _add(collectable_id, quantity)
 	return result.success
 
 ## Remove a collectable from the inventory (public API)
-func remove(collectable_id: String, quantity: int) -> bool:
+func remove(collectable_id: String, quantity: int = 1) -> bool:
 	return _remove(collectable_id, quantity)
 
 ## Add a collectable to a specific slot (public API)
@@ -422,7 +475,7 @@ func _spawn_items_into_world(collectable_id: String, quantity: int) -> void:
 	for i in quantity:
 		var item_instance = item_scene.instantiate()
 		item_instance.top_level = true
-		add_child(item_instance)
+		GameManager.world_root.add_child(item_instance)
 		item_instance.global_position = spawn_location_node.global_position
 		item_instance.add_to_group("despawnable_item")
 

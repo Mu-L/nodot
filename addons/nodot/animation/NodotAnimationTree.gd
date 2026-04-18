@@ -37,7 +37,6 @@ func get_param_path(friendly_name: String) -> String:
 		return friendly_name
 	if _param_cache.has(friendly_name):
 		return _param_cache[friendly_name]
-	push_warning("AnimationTreeWrapper.get_param_path: unknown parameter '%s'." % friendly_name)
 	return ""
 
 ## Sets the value of a parameter using its friendly name.
@@ -47,7 +46,6 @@ func set_param(param_name: String, value) -> bool:
 		if param_name.begins_with("parameters/"):
 			path = param_name
 		else:
-			push_error("set_param: cannot resolve parameter '%s'." % param_name)
 			return false
 	
 	if not _has_property(path):

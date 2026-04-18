@@ -12,9 +12,40 @@ var INPUT_KEY_SOURCE = {
 	JOYPAD_MOTION = 3
 }
 
+# --- Input Mode Detection ---
+
+enum InputMode { KEYBOARD_MOUSE, CONTROLLER }
+enum ControllerFormat { GENERIC, XBOX, PLAYSTATION, NINTENDO_SWITCH, STEAM_DECK }
+
+signal input_mode_changed(new_mode: InputMode)
+signal controller_type_changed(new_type: ControllerFormat)
+
+var current_mode: InputMode = InputMode.KEYBOARD_MOUSE
+var current_controller_format: ControllerFormat = ControllerFormat.GENERIC
+var stick_deadzone: float = 0.5  # Higher threshold for mode switching (not gameplay)
+
+# InputUI format indices (must match InputUI.input_format_names order)
+const INPUTUI_FORMAT_GENERIC := 1
+const INPUTUI_FORMAT_KEYBOARD_MOUSE := 2
+const INPUTUI_FORMAT_NINTENDO_SWITCH := 3
+const INPUTUI_FORMAT_PLAYSTATION := 7
+const INPUTUI_FORMAT_STEAM_DECK := 9
+const INPUTUI_FORMAT_XBOX := 10
+
+# Button index to texture name mappings for each format
+var _button_maps: Dictionary = {}
+var _axis_maps: Dictionary = {}
+
+
 func _ready():
 	default_input_actions = get_all_input_actions()
 	load_config()
+
+	# Input mode detection setup
+	_init_button_maps()
+	_init_axis_maps()
+	_detect_controller_type()
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 
 func bulk_register_actions_once(uid: String, action_names: Array[String], default_keys: Array[int], input_source: int = 0) -> void:
 	var storage_key: String = "%s:register_actions" % uid
@@ -262,6 +293,300 @@ func event_to_input_key_code(event: InputEvent):
 		})
 	
 	return null
+
+
+# --- Input Mode Detection Methods ---
+
+func _input(event: InputEvent) -> void:
+	var detected_mode := _detect_mode_from_event(event)
+	if detected_mode >= 0 and detected_mode != current_mode:
+		current_mode = detected_mode
+		input_mode_changed.emit(current_mode)
+
+
+func _detect_mode_from_event(event: InputEvent) -> int:
+	# Keyboard/Mouse events
+	if event is InputEventKey:
+		return InputMode.KEYBOARD_MOUSE
+	if event is InputEventMouseButton:
+		return InputMode.KEYBOARD_MOUSE
+	if event is InputEventMouseMotion:
+		# Only switch on significant mouse movement
+		if event.relative.length() > 5.0:
+			return InputMode.KEYBOARD_MOUSE
+		return -1  # Ignore small mouse movements
+
+	# Controller events
+	if event is InputEventJoypadButton:
+		return InputMode.CONTROLLER
+	if event is InputEventJoypadMotion:
+		# Only switch mode if stick/trigger moved past deadzone
+		if abs(event.axis_value) > stick_deadzone:
+			return InputMode.CONTROLLER
+		return -1  # Ignore small stick movements
+
+	return -1  # Unknown event type, don't change mode
+
+
+func _detect_controller_type() -> void:
+	var connected_joypads := Input.get_connected_joypads()
+	if connected_joypads.is_empty():
+		current_controller_format = ControllerFormat.GENERIC
+		return
+
+	var joy_name := Input.get_joy_name(0).to_lower()
+	var previous_format := current_controller_format
+
+	if "playstation" in joy_name or "dualsense" in joy_name or "dualshock" in joy_name or "ps4" in joy_name or "ps5" in joy_name:
+		current_controller_format = ControllerFormat.PLAYSTATION
+	elif "xbox" in joy_name or "microsoft" in joy_name:
+		current_controller_format = ControllerFormat.XBOX
+	elif "nintendo" in joy_name or "switch" in joy_name or "pro controller" in joy_name or "joy-con" in joy_name:
+		current_controller_format = ControllerFormat.NINTENDO_SWITCH
+	elif "steam" in joy_name or "deck" in joy_name:
+		current_controller_format = ControllerFormat.STEAM_DECK
+	else:
+		current_controller_format = ControllerFormat.GENERIC
+
+	if current_controller_format != previous_format:
+		controller_type_changed.emit(current_controller_format)
+
+
+func _on_joy_connection_changed(device: int, connected: bool) -> void:
+	if device == 0:
+		if connected:
+			_detect_controller_type()
+		else:
+			current_controller_format = ControllerFormat.GENERIC
+			controller_type_changed.emit(current_controller_format)
+			# Also switch back to keyboard/mouse mode if controller disconnected
+			if current_mode == InputMode.CONTROLLER:
+				current_mode = InputMode.KEYBOARD_MOUSE
+				input_mode_changed.emit(current_mode)
+
+
+# Query Methods
+
+func is_controller_mode() -> bool:
+	return current_mode == InputMode.CONTROLLER
+
+
+func is_keyboard_mouse_mode() -> bool:
+	return current_mode == InputMode.KEYBOARD_MOUSE
+
+
+func should_grab_focus() -> bool:
+	return current_mode == InputMode.CONTROLLER
+
+
+# UI Helper Methods
+
+func get_inputui_format() -> int:
+	match current_controller_format:
+		ControllerFormat.XBOX:
+			return INPUTUI_FORMAT_XBOX
+		ControllerFormat.PLAYSTATION:
+			return INPUTUI_FORMAT_PLAYSTATION
+		ControllerFormat.NINTENDO_SWITCH:
+			return INPUTUI_FORMAT_NINTENDO_SWITCH
+		ControllerFormat.STEAM_DECK:
+			return INPUTUI_FORMAT_STEAM_DECK
+		_:
+			return INPUTUI_FORMAT_GENERIC
+
+
+func get_input_prompt(action: String) -> String:
+	## Returns the appropriate input prompt string for the current mode
+	if is_controller_mode():
+		return get_joypad_texture_name(action)
+	else:
+		return get_action_key(action)
+
+
+func get_joypad_texture_name(action: String) -> String:
+	## Convert an action name to the appropriate texture file name for InputUI
+	var events := InputMap.action_get_events(action)
+	for event in events:
+		if event is InputEventJoypadButton:
+			return _get_button_texture_name(event.button_index)
+		elif event is InputEventJoypadMotion:
+			return _get_axis_texture_name(event.axis, event.axis_value)
+	return "generic_button"  # Fallback
+
+
+func _get_button_texture_name(button_index: int) -> String:
+	var format_map: Dictionary = _button_maps.get(current_controller_format, _button_maps[ControllerFormat.GENERIC])
+	return format_map.get(button_index, "generic_button")
+
+
+func _get_axis_texture_name(axis: int, axis_value: float) -> String:
+	var format_map: Dictionary = _axis_maps.get(current_controller_format, _axis_maps[ControllerFormat.GENERIC])
+	var key := "%d_%s" % [axis, "pos" if axis_value > 0 else "neg"]
+	# Try specific direction first, then fall back to general axis
+	if format_map.has(key):
+		return format_map[key]
+	return format_map.get(axis, "generic_stick")
+
+
+func _init_button_maps() -> void:
+	# Generic format (platform-agnostic)
+	_button_maps[ControllerFormat.GENERIC] = {
+		JOY_BUTTON_A: "generic_button_circle",
+		JOY_BUTTON_B: "generic_button_square",
+		JOY_BUTTON_X: "generic_button_circle",
+		JOY_BUTTON_Y: "generic_button_square",
+		JOY_BUTTON_LEFT_SHOULDER: "generic_button_trigger_c",
+		JOY_BUTTON_RIGHT_SHOULDER: "generic_button_trigger_c",
+		JOY_BUTTON_BACK: "generic_button",
+		JOY_BUTTON_START: "generic_button",
+		JOY_BUTTON_LEFT_STICK: "generic_stick_press",
+		JOY_BUTTON_RIGHT_STICK: "generic_stick_press",
+		JOY_BUTTON_GUIDE: "generic_button",
+		JOY_BUTTON_MISC1: "generic_button",
+		JOY_BUTTON_DPAD_UP: "generic_stick_up",
+		JOY_BUTTON_DPAD_DOWN: "generic_stick_down",
+		JOY_BUTTON_DPAD_LEFT: "generic_stick_left",
+		JOY_BUTTON_DPAD_RIGHT: "generic_stick_right",
+	}
+
+	# Xbox format
+	_button_maps[ControllerFormat.XBOX] = {
+		JOY_BUTTON_A: "xbox_button_a",
+		JOY_BUTTON_B: "xbox_button_b",
+		JOY_BUTTON_X: "xbox_button_x",
+		JOY_BUTTON_Y: "xbox_button_y",
+		JOY_BUTTON_LEFT_SHOULDER: "xbox_lb",
+		JOY_BUTTON_RIGHT_SHOULDER: "xbox_rb",
+		JOY_BUTTON_BACK: "xbox_button_back",
+		JOY_BUTTON_START: "xbox_button_start",
+		JOY_BUTTON_LEFT_STICK: "xbox_stick_l_press",
+		JOY_BUTTON_RIGHT_STICK: "xbox_stick_r_press",
+		JOY_BUTTON_GUIDE: "xbox_button_guide",
+		JOY_BUTTON_MISC1: "xbox_button_share",
+		JOY_BUTTON_DPAD_UP: "xbox_dpad_up",
+		JOY_BUTTON_DPAD_DOWN: "xbox_dpad_down",
+		JOY_BUTTON_DPAD_LEFT: "xbox_dpad_left",
+		JOY_BUTTON_DPAD_RIGHT: "xbox_dpad_right",
+	}
+
+	# PlayStation format
+	_button_maps[ControllerFormat.PLAYSTATION] = {
+		JOY_BUTTON_A: "playstation_button_cross",
+		JOY_BUTTON_B: "playstation_button_circle",
+		JOY_BUTTON_X: "playstation_button_square",
+		JOY_BUTTON_Y: "playstation_button_triangle",
+		JOY_BUTTON_LEFT_SHOULDER: "playstation_l1",
+		JOY_BUTTON_RIGHT_SHOULDER: "playstation_r1",
+		JOY_BUTTON_BACK: "playstation_button_create",
+		JOY_BUTTON_START: "playstation_button_options",
+		JOY_BUTTON_LEFT_STICK: "playstation_stick_l_press",
+		JOY_BUTTON_RIGHT_STICK: "playstation_stick_r_press",
+		JOY_BUTTON_GUIDE: "playstation_button_ps",
+		JOY_BUTTON_MISC1: "playstation_button_touchpad",
+		JOY_BUTTON_DPAD_UP: "playstation_dpad_up",
+		JOY_BUTTON_DPAD_DOWN: "playstation_dpad_down",
+		JOY_BUTTON_DPAD_LEFT: "playstation_dpad_left",
+		JOY_BUTTON_DPAD_RIGHT: "playstation_dpad_right",
+	}
+
+	# Nintendo Switch format
+	_button_maps[ControllerFormat.NINTENDO_SWITCH] = {
+		JOY_BUTTON_A: "switch_button_b",  # Nintendo has A/B swapped
+		JOY_BUTTON_B: "switch_button_a",
+		JOY_BUTTON_X: "switch_button_y",  # Nintendo has X/Y swapped
+		JOY_BUTTON_Y: "switch_button_x",
+		JOY_BUTTON_LEFT_SHOULDER: "switch_l",
+		JOY_BUTTON_RIGHT_SHOULDER: "switch_r",
+		JOY_BUTTON_BACK: "switch_button_minus",
+		JOY_BUTTON_START: "switch_button_plus",
+		JOY_BUTTON_LEFT_STICK: "switch_stick_l_press",
+		JOY_BUTTON_RIGHT_STICK: "switch_stick_r_press",
+		JOY_BUTTON_GUIDE: "switch_button_home",
+		JOY_BUTTON_MISC1: "switch_button_screenshot",
+		JOY_BUTTON_DPAD_UP: "switch_dpad_up",
+		JOY_BUTTON_DPAD_DOWN: "switch_dpad_down",
+		JOY_BUTTON_DPAD_LEFT: "switch_dpad_left",
+		JOY_BUTTON_DPAD_RIGHT: "switch_dpad_right",
+	}
+
+	# Steam Deck format (uses similar layout to Xbox but different icons)
+	_button_maps[ControllerFormat.STEAM_DECK] = {
+		JOY_BUTTON_A: "steamdeck_button_a",
+		JOY_BUTTON_B: "steamdeck_button_b",
+		JOY_BUTTON_X: "steamdeck_button_x",
+		JOY_BUTTON_Y: "steamdeck_button_y",
+		JOY_BUTTON_LEFT_SHOULDER: "steamdeck_l1",
+		JOY_BUTTON_RIGHT_SHOULDER: "steamdeck_r1",
+		JOY_BUTTON_BACK: "steamdeck_button_view",
+		JOY_BUTTON_START: "steamdeck_button_options",
+		JOY_BUTTON_LEFT_STICK: "steamdeck_stick_l_press",
+		JOY_BUTTON_RIGHT_STICK: "steamdeck_stick_r_press",
+		JOY_BUTTON_GUIDE: "steamdeck_button_steam",
+		JOY_BUTTON_MISC1: "steamdeck_button_quickaccess",
+		JOY_BUTTON_DPAD_UP: "steamdeck_dpad_up",
+		JOY_BUTTON_DPAD_DOWN: "steamdeck_dpad_down",
+		JOY_BUTTON_DPAD_LEFT: "steamdeck_dpad_left",
+		JOY_BUTTON_DPAD_RIGHT: "steamdeck_dpad_right",
+	}
+
+
+func _init_axis_maps() -> void:
+	# Generic format
+	_axis_maps[ControllerFormat.GENERIC] = {
+		JOY_AXIS_LEFT_X: "generic_stick_horizontal",
+		JOY_AXIS_LEFT_Y: "generic_stick_vertical",
+		JOY_AXIS_RIGHT_X: "generic_stick_horizontal",
+		JOY_AXIS_RIGHT_Y: "generic_stick_vertical",
+		JOY_AXIS_TRIGGER_LEFT: "generic_button_trigger_a",
+		JOY_AXIS_TRIGGER_RIGHT: "generic_button_trigger_b",
+	}
+
+	# Xbox format
+	_axis_maps[ControllerFormat.XBOX] = {
+		JOY_AXIS_LEFT_X: "xbox_stick_l_horizontal",
+		JOY_AXIS_LEFT_Y: "xbox_stick_l_vertical",
+		JOY_AXIS_RIGHT_X: "xbox_stick_r_horizontal",
+		JOY_AXIS_RIGHT_Y: "xbox_stick_r_vertical",
+		JOY_AXIS_TRIGGER_LEFT: "xbox_lt",
+		JOY_AXIS_TRIGGER_RIGHT: "xbox_rt",
+	}
+
+	# PlayStation format
+	_axis_maps[ControllerFormat.PLAYSTATION] = {
+		JOY_AXIS_LEFT_X: "playstation_stick_l_horizontal",
+		JOY_AXIS_LEFT_Y: "playstation_stick_l_vertical",
+		JOY_AXIS_RIGHT_X: "playstation_stick_r_horizontal",
+		JOY_AXIS_RIGHT_Y: "playstation_stick_r_vertical",
+		JOY_AXIS_TRIGGER_LEFT: "playstation_l2",
+		JOY_AXIS_TRIGGER_RIGHT: "playstation_r2",
+	}
+
+	# Nintendo Switch format
+	_axis_maps[ControllerFormat.NINTENDO_SWITCH] = {
+		JOY_AXIS_LEFT_X: "switch_stick_l_horizontal",
+		JOY_AXIS_LEFT_Y: "switch_stick_l_vertical",
+		JOY_AXIS_RIGHT_X: "switch_stick_r_horizontal",
+		JOY_AXIS_RIGHT_Y: "switch_stick_r_vertical",
+		JOY_AXIS_TRIGGER_LEFT: "switch_zl",
+		JOY_AXIS_TRIGGER_RIGHT: "switch_zr",
+	}
+
+	# Steam Deck format
+	_axis_maps[ControllerFormat.STEAM_DECK] = {
+		JOY_AXIS_LEFT_X: "steamdeck_stick_l_horizontal",
+		JOY_AXIS_LEFT_Y: "steamdeck_stick_l_vertical",
+		JOY_AXIS_RIGHT_X: "steamdeck_stick_r_horizontal",
+		JOY_AXIS_RIGHT_Y: "steamdeck_stick_r_vertical",
+		JOY_AXIS_TRIGGER_LEFT: "steamdeck_l2",
+		JOY_AXIS_TRIGGER_RIGHT: "steamdeck_r2",
+	}
+
+
+func reset_input_mode() -> void:
+	current_mode = InputMode.KEYBOARD_MOUSE
+	current_controller_format = ControllerFormat.GENERIC
+	_detect_controller_type()
+
 
 class InputKeyCode:
 	var type: int = 0
